@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { User } from '@supabase/supabase-js';
 import { Card } from './shared/Card';
 import { Button } from './shared/Button';
 import { Typography } from './shared/Typography';
@@ -22,6 +23,8 @@ import {
 import { supabase, Profile, ExchangeRate, Transaction } from '@/lib/supabase';
 
 interface AgentDashboardScreenProps {
+  user: User | null;
+  userProfile: Profile | null;
   onViewOffer?: (transactionId: string) => void;
   onManageRates?: () => void;
   onViewTransactions?: () => void;
@@ -41,13 +44,14 @@ interface BDCAgent {
 }
 
 export const AgentDashboardScreen: React.FC<AgentDashboardScreenProps> = ({
+  user,
+  userProfile,
   onViewOffer,
   onManageRates,
   onViewTransactions
 }) => {
   const [balanceVisible, setBalanceVisible] = useState(true);
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [userProfile, setUserProfile] = useState<Profile | null>(null);
   const [agentProfile, setAgentProfile] = useState<BDCAgent | null>(null);
   const [exchangeRates, setExchangeRates] = useState<ExchangeRate[]>([]);
   const [newRequests, setNewRequests] = useState<Transaction[]>([]);
@@ -62,42 +66,25 @@ export const AgentDashboardScreen: React.FC<AgentDashboardScreenProps> = ({
   }, []);
 
   useEffect(() => {
-    fetchAgentDashboardData();
-  }, []);
+    if (user && userProfile) {
+      fetchAgentDashboardData(user, userProfile);
+    }
+  }, [user, userProfile]);
 
-  const fetchAgentDashboardData = async () => {
+  const fetchAgentDashboardData = async (currentUser: User, currentUserProfile: Profile) => {
     try {
       setLoading(true);
       setError(null);
 
-      // Get current user
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError || !user) {
-        throw new Error('User not authenticated');
-      }
-
-      // Fetch user profile
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-
-      if (profileError) {
-        throw new Error(`Failed to fetch profile: ${profileError.message}`);
-      }
-
-      if (profile.account_type !== 'bdc_agent') {
+      if (currentUserProfile.account_type !== 'bdc_agent') {
         throw new Error('Access denied: User is not a BDC agent');
       }
-
-      setUserProfile(profile);
 
       // Fetch BDC agent details
       const { data: agent, error: agentError } = await supabase
         .from('bdc_agents')
         .select('*')
-        .eq('id', user.id)
+        .eq('id', currentUser.id)
         .single();
 
       if (agentError) {
@@ -111,7 +98,7 @@ export const AgentDashboardScreen: React.FC<AgentDashboardScreenProps> = ({
       const { data: rates, error: ratesError } = await supabase
         .from('exchange_rates')
         .select('*')
-        .eq('agent_id', user.id)
+        .eq('agent_id', currentUser.id)
         .eq('is_active', true)
         .order('created_at', { ascending: false });
 
@@ -132,7 +119,7 @@ export const AgentDashboardScreen: React.FC<AgentDashboardScreenProps> = ({
             kyc_status
           )
         `)
-        .eq('agent_id', user.id)
+        .eq('agent_id', currentUser.id)
         .eq('status', 'pending_agent_offer')
         .order('created_at', { ascending: false })
         .limit(5);
@@ -153,7 +140,7 @@ export const AgentDashboardScreen: React.FC<AgentDashboardScreenProps> = ({
             full_name
           )
         `)
-        .eq('agent_id', user.id)
+        .eq('agent_id', currentUser.id)
         .not('status', 'in', '(completed,cancelled,disputed)')
         .neq('status', 'pending_agent_offer')
         .order('created_at', { ascending: false })
@@ -175,7 +162,7 @@ export const AgentDashboardScreen: React.FC<AgentDashboardScreenProps> = ({
             full_name
           )
         `)
-        .eq('agent_id', user.id)
+        .eq('agent_id', currentUser.id)
         .eq('status', 'completed')
         .order('created_at', { ascending: false })
         .limit(3);
@@ -277,7 +264,7 @@ export const AgentDashboardScreen: React.FC<AgentDashboardScreenProps> = ({
                 variant="outline"
                 size="sm"
                 className="mt-3"
-                onClick={fetchAgentDashboardData}
+                onClick={() => user && userProfile && fetchAgentDashboardData(user, userProfile)}
               >
                 Try Again
               </Button>

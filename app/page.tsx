@@ -219,6 +219,8 @@ export default function Home() {
     return (
       <Layout showHeader showBottomNav userProfile={userProfile}>
         <AgentDashboardScreen 
+          user={user}
+          userProfile={userProfile}
           onViewOffer={(transactionId) => {
             // TODO: Navigate to agent offer screen
             console.log('View offer for transaction:', transactionId);
@@ -236,6 +238,8 @@ export default function Home() {
   return (
     <Layout showHeader showBottomNav userProfile={userProfile}>
       <DashboardScreen 
+        user={user}
+        userProfile={userProfile}
         onStartExchange={startExchangeFlow}
         onViewHistory={viewTransactionHistory}
         onSecuritySettings={openSecuritySettings}

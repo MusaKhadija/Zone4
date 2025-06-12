@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { User } from '@supabase/supabase-js';
 import { Card } from './shared/Card';
 import { Button } from './shared/Button';
 import { Typography } from './shared/Typography';
@@ -23,6 +24,8 @@ import {
 import { supabase, Profile, ExchangeRate, Transaction } from '@/lib/supabase';
 
 interface DashboardScreenProps {
+  user: User | null;
+  userProfile: Profile | null;
   onStartExchange: () => void;
   onViewHistory: () => void;
   onSecuritySettings?: () => void;
@@ -30,6 +33,8 @@ interface DashboardScreenProps {
 }
 
 export const DashboardScreen: React.FC<DashboardScreenProps> = ({
+  user,
+  userProfile,
   onStartExchange,
   onViewHistory,
   onSecuritySettings,
@@ -37,7 +42,6 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
 }) => {
   const [balanceVisible, setBalanceVisible] = useState(true);
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [userProfile, setUserProfile] = useState<Profile | null>(null);
   const [exchangeRates, setExchangeRates] = useState<ExchangeRate[]>([]);
   const [recentTransactions, setRecentTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
@@ -49,32 +53,15 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   }, []);
 
   useEffect(() => {
-    fetchDashboardData();
-  }, []);
+    if (user && userProfile) {
+      fetchDashboardData(user, userProfile);
+    }
+  }, [user, userProfile]);
 
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = async (currentUser: User, currentUserProfile: Profile) => {
     try {
       setLoading(true);
       setError(null);
-
-      // Get current user
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError || !user) {
-        throw new Error('User not authenticated');
-      }
-
-      // Fetch user profile
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-
-      if (profileError) {
-        throw new Error(`Failed to fetch profile: ${profileError.message}`);
-      }
-
-      setUserProfile(profile);
 
       // Fetch live exchange rates with agent details
       const { data: rates, error: ratesError } = await supabase
@@ -109,7 +96,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             average_rating
           )
         `)
-        .eq('customer_id', user.id)
+        .eq('customer_id', currentUser.id)
         .order('created_at', { ascending: false })
         .limit(3);
 
@@ -212,7 +199,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                 variant="outline"
                 size="sm"
                 className="mt-3"
-                onClick={fetchDashboardData}
+                onClick={() => user && userProfile && fetchDashboardData(user, userProfile)}
               >
                 Try Again
               </Button>
