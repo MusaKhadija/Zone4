@@ -4,16 +4,38 @@ import { createClient } from '@supabase/supabase-js'
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
 
-// Check if environment variables are properly set
-if (!supabaseUrl) {
-  console.warn('NEXT_PUBLIC_SUPABASE_URL is not set. Please add it to your .env.local file.')
+// Validate URL format
+const isValidUrl = (url: string): boolean => {
+  try {
+    new URL(url)
+    return true
+  } catch {
+    return false
+  }
 }
 
-if (!supabaseAnonKey) {
-  console.warn('NEXT_PUBLIC_SUPABASE_ANON_KEY is not set. Please add it to your .env.local file.')
+// Check if environment variables are properly set and valid
+const hasValidConfig = supabaseUrl && 
+  supabaseAnonKey && 
+  isValidUrl(supabaseUrl) && 
+  !supabaseUrl.includes('your_supabase_project_url_here') &&
+  !supabaseAnonKey.includes('your_supabase_anon_key_here')
+
+if (!hasValidConfig) {
+  if (!supabaseUrl || supabaseUrl.includes('your_supabase_project_url_here')) {
+    console.warn('NEXT_PUBLIC_SUPABASE_URL is not set or contains placeholder value. Please add your actual Supabase URL to your .env.local file.')
+  }
+  
+  if (!supabaseAnonKey || supabaseAnonKey.includes('your_supabase_anon_key_here')) {
+    console.warn('NEXT_PUBLIC_SUPABASE_ANON_KEY is not set or contains placeholder value. Please add your actual Supabase anon key to your .env.local file.')
+  }
+  
+  if (supabaseUrl && !isValidUrl(supabaseUrl)) {
+    console.warn('NEXT_PUBLIC_SUPABASE_URL is not a valid URL format. Please check your .env.local file.')
+  }
 }
 
-// Create a mock client if environment variables are missing (for development)
+// Create a mock client if environment variables are missing or invalid (for development)
 const createMockClient = () => ({
   auth: {
     getUser: () => Promise.resolve({ data: { user: null }, error: null }),
@@ -81,7 +103,7 @@ const createMockClient = () => ({
 })
 
 // Export the Supabase client (real or mock)
-export const supabase = (supabaseUrl && supabaseAnonKey) 
+export const supabase = hasValidConfig
   ? createClient(supabaseUrl, supabaseAnonKey)
   : createMockClient()
 
