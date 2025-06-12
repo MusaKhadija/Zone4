@@ -58,7 +58,7 @@ export const SecuritySettingsScreen: React.FC<SecuritySettingsScreenProps> = ({
       if (user) {
         // Check if user has MFA factors enrolled
         const { data: factors } = await supabase.auth.mfa.listFactors();
-        setMfaEnabled(factors?.totp?.length > 0 || false);
+        setMfaEnabled(!!factors?.totp?.length);
       }
 
       // Load biometric preference from localStorage
