@@ -35,6 +35,56 @@ if (!hasValidConfig) {
   }
 }
 
+// Create a comprehensive mock query builder that supports all method chaining
+const createMockQueryBuilder = (): any => {
+  const mockResult = Promise.resolve({ data: [], error: null, count: 0 })
+  
+  const mockBuilder: any = {
+    // Selection methods
+    select: () => mockBuilder,
+    
+    // Filter methods - all return mockBuilder for chaining
+    eq: () => mockBuilder,
+    neq: () => mockBuilder,
+    gt: () => mockBuilder,
+    gte: () => mockBuilder,
+    lt: () => mockBuilder,
+    lte: () => mockBuilder,
+    like: () => mockBuilder,
+    ilike: () => mockBuilder,
+    is: () => mockBuilder,
+    in: () => mockBuilder,
+    contains: () => mockBuilder,
+    containedBy: () => mockBuilder,
+    rangeGt: () => mockBuilder,
+    rangeGte: () => mockBuilder,
+    rangeLt: () => mockBuilder,
+    rangeLte: () => mockBuilder,
+    rangeAdjacent: () => mockBuilder,
+    overlaps: () => mockBuilder,
+    textSearch: () => mockBuilder,
+    match: () => mockBuilder,
+    not: () => mockBuilder,
+    or: () => mockBuilder,
+    filter: () => mockBuilder,
+    
+    // Ordering and limiting
+    order: () => mockBuilder,
+    limit: () => mockBuilder,
+    range: () => mockBuilder,
+    
+    // Terminal methods that return promises
+    single: () => Promise.resolve({ data: null, error: { message: 'Supabase not configured' } }),
+    maybeSingle: () => Promise.resolve({ data: null, error: { message: 'Supabase not configured' } }),
+    
+    // Make it thenable so it can be awaited directly
+    then: (resolve: any) => mockResult.then(resolve),
+    catch: (reject: any) => mockResult.catch(reject)
+  }
+  
+  return mockBuilder
+}
+
 // Create a mock client if environment variables are missing or invalid (for development)
 const createMockClient = () => ({
   auth: {
@@ -52,34 +102,7 @@ const createMockClient = () => ({
     }
   },
   from: () => ({
-    select: () => ({
-      eq: () => ({
-        single: () => Promise.resolve({ data: null, error: { message: 'Supabase not configured' } }),
-        order: () => ({
-          limit: () => Promise.resolve({ data: [], error: null }),
-          range: () => Promise.resolve({ data: [], error: null, count: 0 })
-        }),
-        limit: () => Promise.resolve({ data: [], error: null }),
-        range: () => Promise.resolve({ data: [], error: null, count: 0 }),
-        gte: () => ({
-          lte: () => Promise.resolve({ data: [], error: null })
-        }),
-        not: () => ({
-          neq: () => ({
-            order: () => ({
-              limit: () => Promise.resolve({ data: [], error: null })
-            })
-          })
-        }),
-        or: () => Promise.resolve({ data: [], error: null })
-      }),
-      order: () => ({
-        limit: () => Promise.resolve({ data: [], error: null }),
-        range: () => Promise.resolve({ data: [], error: null, count: 0 })
-      }),
-      limit: () => Promise.resolve({ data: [], error: null }),
-      range: () => Promise.resolve({ data: [], error: null, count: 0 })
-    }),
+    select: () => createMockQueryBuilder(),
     insert: () => ({
       select: () => ({
         single: () => Promise.resolve({ data: null, error: { message: 'Supabase not configured' } })
@@ -87,7 +110,8 @@ const createMockClient = () => ({
     }),
     update: () => ({
       eq: () => Promise.resolve({ data: null, error: { message: 'Supabase not configured' } })
-    })
+    }),
+    delete: () => createMockQueryBuilder()
   }),
   storage: {
     from: () => ({
