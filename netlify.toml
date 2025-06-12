@@ -1,16 +1,10 @@
 [build]
   command = "npm run build"
-  publish = "out"
+  publish = ".next"
 
 [build.environment]
   NODE_VERSION = "18"
   NPM_FLAGS = "--production=false"
-
-# Handle client-side routing for SPA behavior
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
 
 # Security headers
 [[headers]]
