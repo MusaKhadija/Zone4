@@ -348,7 +348,6 @@ export const DisputeInitiationScreen: React.FC<DisputeInitiationScreenProps> = (
               size="sm"
               leftIcon={<Camera className="w-4 h-4" />}
               disabled={isSubmitting}
-              as="span"
             >
               Select Files
             </Button>
