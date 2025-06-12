@@ -56,8 +56,18 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) =>
   const handleVerificationNext = async (verification: OnboardingData['verification']) => {
     setOnboardingData(prev => ({ ...prev, verification }));
     
-    // Now we have all the data needed to create the account
-    await createUserAccount({ ...onboardingData, verification });
+    // Ensure all required data is present before creating account
+    if (onboardingData.accountType && onboardingData.personalDetails && verification) {
+      const completeData: Required<OnboardingData> = {
+        accountType: onboardingData.accountType,
+        personalDetails: onboardingData.personalDetails,
+        verification: verification
+      };
+      
+      await createUserAccount(completeData);
+    } else {
+      setSignUpError('Missing required information. Please complete all previous steps.');
+    }
   };
 
   const createUserAccount = async (completeData: Required<OnboardingData>) => {
